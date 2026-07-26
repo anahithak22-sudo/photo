@@ -1,0 +1,25 @@
+@theme {
+  --color-linen: var(--color-linen);
+  --color-ink: var(--color-ink);
+  --color-paper: var(--color-paper);
+  --color-stone: var(--color-stone);
+  --color-pebble: var(--color-pebble);
+  --color-hairline: var(--color-hairline);
+
+  --font-display: var(--font-cosmosoracle);
+  --font-sans: var(--font-body);
+
+  --radius-card: var(--radius-card);
+  --radius-tile: var(--radius-tile);
+
+  --font-weight-display: var(--weight-display);
+  --font-weight-body: var(--weight-body);
+  --font-weight-label: var(--weight-label);
+
+  --text-display-xl: var(--text-display-xl);
+  --text-display-xl--line-height: 1.05;
+  --text-display-xl--letter-spacing: var(--tracking-display);
+
+  --spacing-section: var(--section-gap);
+  --container-max: var(--max-width);
+}
