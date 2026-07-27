@@ -49,6 +49,10 @@ function confidenceSchema<T extends z.ZodTypeAny>(primary: T) {
   return z.object({
     confidence: z.enum(["high", "medium", "low"]),
     primary,
+    // Capped at 2 (was 3): every one of the six confidence fields can carry
+    // alternatives, so this multiplies across the whole response and directly
+    // drives generation time, which has to stay under an effective ~35s
+    // platform ceiling.
     alternatives: z
       .array(
         z.object({
@@ -56,7 +60,7 @@ function confidenceSchema<T extends z.ZodTypeAny>(primary: T) {
           reasoning: z.string(),
         })
       )
-      .max(3),
+      .max(2),
   });
 }
 

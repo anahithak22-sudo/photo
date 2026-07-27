@@ -19,7 +19,9 @@ export const ANALYZE_SERIES_INSTRUCTION = `Задача: перед тобой �
 
 export const RECONSTRUCT_INSTRUCTION = `Задача принципиально другая: не критиковать фотографию, а реконструировать, как она примерно была снята. Никакой критики референса. Если фото несколько — они одна серия в одном визуальном ключе, дай общую реконструкцию. Заполни: camera, lens, settings, perspective, lighting, location, props (с объяснением функции каждого предмета), styling, composition, postProcessing, shootingPlan (минимум 8 шагов: Location → Background → Lighting → Camera → Position → Composition → Styling → Shooting → Editing).
 
-Для полей camera, lens, settings, perspective, lighting, location: если параметр нельзя определить однозначно, честно укажи confidence: "low" или "medium" и предложи альтернативы в alternatives с обоснованием (reasoning). Если уверенность высокая — confidence: "high" и alternatives можно оставить пустым массивом.`;
+Для полей camera, lens, settings, perspective, lighting, location: если параметр нельзя определить однозначно, честно укажи confidence: "low" или "medium" и предложи 1-2 альтернативы в alternatives с обоснованием (reasoning). Если уверенность высокая — confidence: "high" и alternatives оставь пустым массивом.
+
+Пиши сжато: каждое поле — 1-2 предложения, описание шага плана — одно короткое предложение. Без вступлений и повторов.`;
 
 export const CONCEPTS_INSTRUCTION = `Задача: пользователь описал идею для фотосъёмки. Придумай ровно 2 РАЗНЫЕ визуальные концепции, которые отличаются по подходу (например: тёмный минимализм / фактурная естественность / графичный высокий контраст) — не вариации одной и той же идеи. Для каждой концепции заполни: title (например "Concept 01 — Dark Minimalism"), mood, location, background, lighting, props (1-3 предмета с функцией каждого), composition, colorPalette (3-4 цвета в hex с названиями), moodDescription (2-3 предложения о том, как это выглядит визуально — кратко, без воды), searchPrompts (3-4 готовых поисковых запроса на английском для Pinterest/Behance/Google Images), referenceNotes (3-5 пунктов, на что смотреть в референсах). Пиши по существу и компактно — это не эссе.`;
 
