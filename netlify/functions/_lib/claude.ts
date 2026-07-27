@@ -124,7 +124,15 @@ export async function callClaude<T>(options: CallOptions<T>): Promise<T> {
     if (!toolUse) {
       throw new ClaudeRequestError("Модель не вернула структурированный ответ", 502);
     }
-    return schema.parse(toolUse.input);
+    const result = schema.safeParse(toolUse.input);
+    if (!result.success) {
+      console.error(
+        `[claude:${toolName}] schema mismatch, raw input was:`,
+        JSON.stringify(toolUse.input).slice(0, 3000)
+      );
+      throw result.error;
+    }
+    return result.data;
   };
 
   try {
