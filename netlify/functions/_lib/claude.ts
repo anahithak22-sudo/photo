@@ -103,20 +103,26 @@ export async function callClaude<T>(options: CallOptions<T>): Promise<T> {
   // covers retries as a fresh, independent invocation instead of doubling the
   // latency (and timeout risk) of a single request.
   try {
+    // Streamed rather than a single blocking create(): a real photo analysis
+    // runs past the ~30s inactivity wall of the proxy in front of Netlify, and
+    // streaming keeps the SDK connection actively receiving instead of sitting
+    // idle. finalMessage() still yields the complete assembled message.
     const response = await withBackoff(() =>
-      anthropic.messages.create(
-        {
-          model: MODEL,
-          max_tokens: maxTokens,
-          // Sonnet 5 rejects `temperature` outright ("deprecated for this model"),
-          // confirmed via live 400 response — omit it rather than pass a fixed value.
-          system,
-          tools: [tool],
-          tool_choice: { type: "tool", name: toolName },
-          messages: [{ role: "user", content }],
-        },
-        { timeout: 45_000 }
-      )
+      anthropic.messages
+        .stream(
+          {
+            model: MODEL,
+            max_tokens: maxTokens,
+            // Sonnet 5 rejects `temperature` outright ("deprecated for this model"),
+            // confirmed via live 400 response — omit it rather than pass a fixed value.
+            system,
+            tools: [tool],
+            tool_choice: { type: "tool", name: toolName },
+            messages: [{ role: "user", content }],
+          },
+          { timeout: 50_000 }
+        )
+        .finalMessage()
     );
 
     const toolUse = response.content.find(

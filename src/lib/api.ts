@@ -23,18 +23,22 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     throw new Error("Соединение потеряно. Результат не сохранён — попробуй ещё раз.");
   }
 
-  if (!response.ok) {
-    let message = "Не удалось получить ответ от модели. Попробуй ещё раз.";
-    try {
-      const data = (await response.json()) as { error?: string };
-      if (data.error) message = data.error;
-    } catch {
-      // ignore parse errors, use default message
-    }
-    throw new Error(message);
+  // The AI endpoints stream keep-alive whitespace while the model works (to
+  // survive a ~30s edge-proxy inactivity timeout), so they always resolve as
+  // HTTP 200 and signal failure with an `error` field in the body instead.
+  // Fast-fail validation (bad method / missing input) still uses a real status.
+  let data: { error?: string } & Partial<T>;
+  try {
+    data = JSON.parse(await response.text());
+  } catch {
+    throw new Error("Не удалось получить ответ от модели. Попробуй ещё раз.");
   }
 
-  return (await response.json()) as T;
+  if (!response.ok || data.error) {
+    throw new Error(data.error || "Не удалось получить ответ от модели. Попробуй ещё раз.");
+  }
+
+  return data as T;
 }
 
 export function analyzeSinglePhoto(image: ApiImage): Promise<PhotoAnalysis> {
