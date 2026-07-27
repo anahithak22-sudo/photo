@@ -98,8 +98,11 @@ export const ReconstructSchema = z.object({
         description: z.string(),
       })
     )
-    .min(5)
-    .max(6),
+    // PRD requires at least 8 steps and the prompt asks for them explicitly —
+    // these bounds must stay in sync with that instruction or every response
+    // fails validation.
+    .min(8)
+    .max(9),
 });
 
 const PropSchema = z.object({
