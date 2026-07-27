@@ -23,7 +23,7 @@ export class ClaudeRequestError extends Error {
 }
 
 export interface ImageInput {
-  base64: string;
+  data: string;
   mediaType: "image/jpeg" | "image/png" | "image/webp";
 }
 
@@ -74,13 +74,23 @@ export async function callClaude<T>(options: CallOptions<T>): Promise<T> {
   } = options;
 
   const tool = toTool(toolName, toolDescription, schema);
-  const anthropic = getClient();
+
+  let anthropic: Anthropic;
+  try {
+    anthropic = getClient();
+  } catch (err) {
+    console.error(`[claude:${toolName}] client init failed:`, describeError(err));
+    throw new ClaudeRequestError(
+      "ANTHROPIC_API_KEY не настроен на сервере. Проверь переменную окружения в Netlify и сделай новый деплой.",
+      502
+    );
+  }
 
   const content: Anthropic.MessageParam["content"] = [];
   for (const image of images) {
     content.push({
       type: "image",
-      source: { type: "base64", media_type: image.mediaType, data: image.base64 },
+      source: { type: "base64", media_type: image.mediaType, data: image.data },
     });
   }
   if (text) {
