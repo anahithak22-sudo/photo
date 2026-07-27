@@ -1,25 +1,25 @@
 @theme {
-  --color-linen: var(--color-linen);
-  --color-ink: var(--color-ink);
-  --color-paper: var(--color-paper);
-  --color-stone: var(--color-stone);
-  --color-pebble: var(--color-pebble);
-  --color-hairline: var(--color-hairline);
+  --color-linen: var(--raw-color-linen);
+  --color-ink: var(--raw-color-ink);
+  --color-paper: var(--raw-color-paper);
+  --color-stone: var(--raw-color-stone);
+  --color-pebble: var(--raw-color-pebble);
+  --color-hairline: var(--raw-color-hairline);
 
-  --font-display: var(--font-cosmosoracle);
-  --font-sans: var(--font-body);
+  --font-heading: var(--raw-font-cosmosoracle);
+  --font-sans: var(--raw-font-body);
 
-  --radius-card: var(--radius-card);
-  --radius-tile: var(--radius-tile);
+  --radius-card: var(--raw-radius-card);
+  --radius-tile: var(--raw-radius-tile);
 
-  --font-weight-display: var(--weight-display);
-  --font-weight-body: var(--weight-body);
-  --font-weight-label: var(--weight-label);
+  --font-weight-display: var(--raw-weight-display);
+  --font-weight-body: var(--raw-weight-body);
+  --font-weight-label: var(--raw-weight-label);
 
-  --text-display-xl: var(--text-display-xl);
+  --text-display-xl: var(--raw-text-display-xl);
   --text-display-xl--line-height: 1.05;
-  --text-display-xl--letter-spacing: var(--tracking-display);
+  --text-display-xl--letter-spacing: var(--raw-tracking-display);
 
-  --spacing-section: var(--section-gap);
-  --container-max: var(--max-width);
+  --spacing-section: var(--raw-section-gap);
+  --container-max: var(--raw-max-width);
 }

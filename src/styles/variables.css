@@ -1,31 +1,39 @@
 :root {
+  /* Raw design tokens (referenced by theme.css @theme block, never used directly as utilities) */
+
   /* Colors */
-  --color-linen: #f7f5f3;
-  --color-ink: #0d0d0d;
-  --color-paper: #ffffff;
-  --color-stone: #6e6a69;
-  --color-pebble: #9a9796;
-  --color-hairline: rgba(13, 13, 13, 0.08);
+  --raw-color-linen: #f7f5f3;
+  --raw-color-ink: #0d0d0d;
+  --raw-color-paper: #ffffff;
+  --raw-color-stone: #6e6a69;
+  --raw-color-pebble: #9a9796;
+  --raw-color-hairline: rgba(13, 13, 13, 0.08);
 
   /* Typography */
-  --font-cosmosoracle: "Fraunces", "GT Super", Georgia, serif;
-  --font-body: "Fraunces", Georgia, serif;
+  --raw-font-cosmosoracle: "Fraunces", "GT Super", Georgia, serif;
+  --raw-font-body: "Fraunces", Georgia, serif;
 
-  --weight-display: 350;
-  --weight-body: 400;
-  --weight-label: 500;
+  --raw-weight-display: 350;
+  --raw-weight-body: 400;
+  --raw-weight-label: 500;
 
-  --text-display-xl: 74px;
-  --text-display-mobile: 38px;
+  --raw-text-display-xl: 74px;
+  --raw-text-display-mobile: 38px;
 
-  --tracking-display: -0.02em;
-  --tracking-body: -0.01em;
+  --raw-tracking-display: -0.02em;
+  --raw-tracking-body: -0.01em;
 
   /* Radius */
-  --radius-card: 16px;
-  --radius-tile: 12px;
+  --raw-radius-card: 16px;
+  --raw-radius-tile: 12px;
 
   /* Layout */
-  --max-width: 1280px;
-  --section-gap: 80px;
+  --raw-max-width: 1280px;
+  --raw-section-gap: 80px;
+}
+
+@media (max-width: 639px) {
+  :root {
+    --raw-text-display-xl: var(--raw-text-display-mobile);
+  }
 }
