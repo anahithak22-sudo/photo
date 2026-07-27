@@ -119,6 +119,15 @@ export async function callClaude<T>(options: CallOptions<T>): Promise<T> {
   try {
     return await runOnce();
   } catch (err) {
+    console.error(`[claude:${toolName}] first attempt failed:`, describeError(err));
+
+    const apiStatus = (err as { status?: number })?.status;
+    if (apiStatus !== undefined) {
+      // A real API error (auth/billing/bad request/model issue) won't be fixed by
+      // asking the model to retry with a note — surface it directly instead.
+      throw new ClaudeRequestError(apiErrorMessage(apiStatus), 502);
+    }
+
     try {
       return await runOnce(
         `Твой предыдущий ответ не прошёл валидацию: ${String(
@@ -126,10 +135,40 @@ export async function callClaude<T>(options: CallOptions<T>): Promise<T> {
         )}. Пожалуйста, верни корректный результат строго по схеме инструмента.`
       );
     } catch (retryErr) {
+      console.error(`[claude:${toolName}] retry attempt failed:`, describeError(retryErr));
+      const retryStatus = (retryErr as { status?: number })?.status;
+      if (retryStatus !== undefined) {
+        throw new ClaudeRequestError(apiErrorMessage(retryStatus), 502);
+      }
       throw new ClaudeRequestError(
         "Не удалось получить корректный ответ от модели. Попробуй ещё раз.",
         502
       );
     }
+  }
+}
+
+function describeError(err: unknown): unknown {
+  if (err && typeof err === "object") {
+    const e = err as { status?: number; message?: string; name?: string; error?: unknown };
+    return { status: e.status, name: e.name, message: e.message, detail: e.error };
+  }
+  return err;
+}
+
+function apiErrorMessage(status: number): string {
+  switch (status) {
+    case 401:
+      return "Ключ ANTHROPIC_API_KEY недействителен. Проверь его в настройках Netlify.";
+    case 403:
+      return "Нет доступа к API. Проверь баланс и права ключа в консоли Anthropic.";
+    case 404:
+      return "Модель недоступна. Проверь имя модели в настройках функции.";
+    case 429:
+      return "Слишком много запросов к модели. Подожди немного и попробуй снова.";
+    case 529:
+      return "Сервис Anthropic сейчас перегружен. Попробуй через минуту.";
+    default:
+      return "Не удалось получить ответ от модели. Попробуй ещё раз.";
   }
 }
