@@ -30,7 +30,11 @@ export const handler: Handler = async (event) => {
       toolDescription: "3-4 визуально разные концепции фотосъёмки",
       schema: ConceptsSchema,
       text: body.description,
-      maxTokens: 8192,
+      // 8192 measured ~31s and tripped an edge-proxy inactivity timeout (504)
+      // in front of Netlify well before the model itself ran out of budget.
+      // 3-4 concepts' worth of content fits comfortably in ~2-3k tokens, so
+      // this ceiling was oversized for what's actually generated.
+      maxTokens: 4096,
       temperature: 0.8,
     });
     return { statusCode: 200, body: JSON.stringify(result) };
