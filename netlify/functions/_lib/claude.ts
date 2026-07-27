@@ -102,7 +102,8 @@ export async function callClaude<T>(options: CallOptions<T>): Promise<T> {
       anthropic.messages.create({
         model: MODEL,
         max_tokens: maxTokens,
-        temperature,
+        // Sonnet 5 rejects `temperature` outright ("deprecated for this model"),
+        // confirmed via live 400 response — omit it rather than pass a fixed value.
         system,
         tools: [tool],
         tool_choice: { type: "tool", name: toolName },
