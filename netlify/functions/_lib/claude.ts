@@ -97,25 +97,26 @@ export async function callClaude<T>(options: CallOptions<T>): Promise<T> {
     content.push({ type: "text", text });
   }
 
-  const runOnce = async (extraNote?: string) => {
+  // Netlify's synchronous function timeout is a hard, non-configurable 60s.
+  // A single call already risks that ceiling with large max_tokens, so there is
+  // no in-function retry here — the client's own "Попробовать снова" button
+  // covers retries as a fresh, independent invocation instead of doubling the
+  // latency (and timeout risk) of a single request.
+  try {
     const response = await withBackoff(() =>
-      anthropic.messages.create({
-        model: MODEL,
-        max_tokens: maxTokens,
-        // Sonnet 5 rejects `temperature` outright ("deprecated for this model"),
-        // confirmed via live 400 response — omit it rather than pass a fixed value.
-        system,
-        tools: [tool],
-        tool_choice: { type: "tool", name: toolName },
-        messages: [
-          {
-            role: "user",
-            content: extraNote
-              ? [...content, { type: "text", text: extraNote }]
-              : content,
-          },
-        ],
-      })
+      anthropic.messages.create(
+        {
+          model: MODEL,
+          max_tokens: maxTokens,
+          // Sonnet 5 rejects `temperature` outright ("deprecated for this model"),
+          // confirmed via live 400 response — omit it rather than pass a fixed value.
+          system,
+          tools: [tool],
+          tool_choice: { type: "tool", name: toolName },
+          messages: [{ role: "user", content }],
+        },
+        { timeout: 45_000 }
+      )
     );
 
     const toolUse = response.content.find(
@@ -130,40 +131,29 @@ export async function callClaude<T>(options: CallOptions<T>): Promise<T> {
         `[claude:${toolName}] schema mismatch, raw input was:`,
         JSON.stringify(toolUse.input).slice(0, 3000)
       );
-      throw result.error;
-    }
-    return result.data;
-  };
-
-  try {
-    return await runOnce();
-  } catch (err) {
-    console.error(`[claude:${toolName}] first attempt failed:`, describeError(err));
-
-    const apiStatus = (err as { status?: number })?.status;
-    if (apiStatus !== undefined) {
-      // A real API error (auth/billing/bad request/model issue) won't be fixed by
-      // asking the model to retry with a note — surface it directly instead.
-      throw new ClaudeRequestError(apiErrorMessage(apiStatus), 502);
-    }
-
-    try {
-      return await runOnce(
-        `Твой предыдущий ответ не прошёл валидацию: ${String(
-          (err as Error).message
-        )}. Пожалуйста, верни корректный результат строго по схеме инструмента.`
-      );
-    } catch (retryErr) {
-      console.error(`[claude:${toolName}] retry attempt failed:`, describeError(retryErr));
-      const retryStatus = (retryErr as { status?: number })?.status;
-      if (retryStatus !== undefined) {
-        throw new ClaudeRequestError(apiErrorMessage(retryStatus), 502);
-      }
       throw new ClaudeRequestError(
-        "Не удалось получить корректный ответ от модели. Попробуй ещё раз.",
+        "Ответ модели не прошёл проверку структуры. Попробуй ещё раз.",
         502
       );
     }
+    return result.data;
+  } catch (err) {
+    if (err instanceof ClaudeRequestError) throw err;
+
+    console.error(`[claude:${toolName}] request failed:`, describeError(err));
+
+    const apiStatus = (err as { status?: number })?.status;
+    if (apiStatus !== undefined) {
+      throw new ClaudeRequestError(apiErrorMessage(apiStatus), 502);
+    }
+    const name = (err as { name?: string })?.name ?? "";
+    if (name.includes("Timeout") || name.includes("Connection")) {
+      throw new ClaudeRequestError(
+        "Модель отвечает слишком долго. Попробуй ещё раз.",
+        504
+      );
+    }
+    throw new ClaudeRequestError("Не удалось получить ответ от модели. Попробуй ещё раз.", 502);
   }
 }
 
