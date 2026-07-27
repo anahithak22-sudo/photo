@@ -129,7 +129,7 @@ export const ConceptSchema = z.object({
 // at ~31s regardless of max_tokens, so the fix is generating less content,
 // not raising a ceiling that was never actually the limiting factor.
 export const ConceptsSchema = z.object({
-  concepts: z.array(ConceptSchema).length(3),
+  concepts: z.array(ConceptSchema).length(2),
 });
 
 export const ShootingPlanSchema = z.object({

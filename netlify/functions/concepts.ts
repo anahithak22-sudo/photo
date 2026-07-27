@@ -27,14 +27,16 @@ export const handler: Handler = async (event) => {
     const result = await callClaude({
       system: systemPrompt(CONCEPTS_INSTRUCTION),
       toolName: "concepts",
-      toolDescription: "3 визуально разные концепции фотосъёмки",
+      toolDescription: "2 визуально разные концепции фотосъёмки",
       schema: ConceptsSchema,
       text: body.description,
-      // Trimmed content (exactly 3 concepts, tighter field bounds) + a modest
-      // token ceiling keeps this comfortably under the ~30s inactivity-timeout
-      // wall of the proxy in front of Netlify.
-      maxTokens: 3000,
-      temperature: 0.8,
+      // Measured live that timing hovered at ~30-31s across three prior
+      // configurations (8192/4096/3000 max_tokens, 3-4 vs 3 concepts) with no
+      // real change — pointing at a fairly fixed per-request delay rather
+      // than output length. Cutting further (2 concepts, lower temperature)
+      // and giving real margin under the ~30s proxy wall.
+      maxTokens: 2000,
+      temperature: 0.6,
     });
     return { statusCode: 200, body: JSON.stringify(result) };
   } catch (err) {
