@@ -32,7 +32,7 @@ export const handler: Handler = async (event) => {
         toolDescription: "Общий визуальный стиль серии фотографий",
         schema: SeriesStyleSchema,
         images: body.images,
-        maxTokens: 4096,
+        maxTokens: 2200,
         temperature: 0.3,
       });
       return { statusCode: 200, body: JSON.stringify(result) };
@@ -44,7 +44,7 @@ export const handler: Handler = async (event) => {
       toolDescription: "Разбор одной фотографии по категориям",
       schema: PhotoAnalysisSchema,
       images: [body.images[0]],
-      maxTokens: 4096,
+      maxTokens: 2200,
       temperature: 0.3,
     });
     return { statusCode: 200, body: JSON.stringify(result) };

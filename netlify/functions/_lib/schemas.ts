@@ -2,9 +2,13 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type Anthropic from "@anthropic-ai/sdk";
 
+// Bounds tightened (was works/improve max 5, characteristics max 7, etc.) —
+// live testing showed real photos generating full-length content pushed
+// analyze/reconstruct into the same ~30s proxy inactivity-timeout that hit
+// concepts; less content generated means less time, same fix that worked there.
 export const SectionSchema = z.object({
-  works: z.array(z.string()).min(1).max(5),
-  improve: z.array(z.string()).min(0).max(5),
+  works: z.array(z.string()).min(1).max(3),
+  improve: z.array(z.string()).min(0).max(3),
   recommendation: z.string(),
 });
 
@@ -17,11 +21,11 @@ export const PhotoAnalysisSchema = z.object({
   format: SectionSchema,
   visualStyle: z.object({
     label: z.string(),
-    characteristics: z.array(z.string()).min(3).max(7),
+    characteristics: z.array(z.string()).min(3).max(4),
   }),
   overall: z.object({
-    strengths: z.array(z.string()).min(2).max(4),
-    problems: z.array(z.string()).min(3).max(5),
+    strengths: z.array(z.string()).min(2).max(3),
+    problems: z.array(z.string()).min(2).max(3),
     priority: z
       .array(
         z.object({
@@ -29,15 +33,15 @@ export const PhotoAnalysisSchema = z.object({
           why: z.string(),
         })
       )
-      .min(3)
-      .max(5),
+      .min(2)
+      .max(3),
   }),
 });
 
 export const SeriesStyleSchema = z.object({
   label: z.string(),
   summary: z.string(),
-  characteristics: z.array(z.string()).min(3).max(8),
+  characteristics: z.array(z.string()).min(3).max(5),
   consistency: z.number().min(0).max(100),
 });
 
@@ -81,7 +85,8 @@ export const ReconstructSchema = z.object({
         function: z.string(),
       })
     )
-    .min(1),
+    .min(1)
+    .max(4),
   styling: z.string(),
   composition: z.string(),
   postProcessing: z.string(),
@@ -93,7 +98,8 @@ export const ReconstructSchema = z.object({
         description: z.string(),
       })
     )
-    .min(8),
+    .min(5)
+    .max(6),
 });
 
 const PropSchema = z.object({

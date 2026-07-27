@@ -30,7 +30,7 @@ export const handler: Handler = async (event) => {
       toolDescription: "Реконструкция того, как был снят кадр",
       schema: ReconstructSchema,
       images: body.images,
-      maxTokens: 4096,
+      maxTokens: 2200,
       temperature: 0.3,
     });
     return { statusCode: 200, body: JSON.stringify(result) };
