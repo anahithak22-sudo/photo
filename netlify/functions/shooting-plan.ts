@@ -1,7 +1,7 @@
-import { callClaude } from "./_lib/claude";
+import type { Handler } from "@netlify/functions";
+import { callClaude, ClaudeRequestError } from "./_lib/claude";
 import { systemPrompt, SHOOTING_PLAN_INSTRUCTION } from "./_lib/prompts";
 import { ShootingPlanSchema } from "./_lib/schemas";
-import { streamJson, jsonResponse } from "./_lib/http";
 import type { Concept } from "../../src/lib/types";
 
 interface RequestBody {
@@ -9,20 +9,20 @@ interface RequestBody {
   concept: Concept;
 }
 
-export default async (req: Request): Promise<Response> => {
-  if (req.method !== "POST") {
-    return jsonResponse(405, { error: "Method Not Allowed" });
+export const handler: Handler = async (event) => {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   let body: RequestBody;
   try {
-    body = (await req.json()) as RequestBody;
+    body = JSON.parse(event.body ?? "{}");
   } catch {
-    return jsonResponse(400, { error: "Некорректный запрос" });
+    return { statusCode: 400, body: JSON.stringify({ error: "Некорректный запрос" }) };
   }
 
   if (!body.concept) {
-    return jsonResponse(400, { error: "Не выбрана концепция" });
+    return { statusCode: 400, body: JSON.stringify({ error: "Не выбрана концепция" }) };
   }
 
   const conceptText = `Исходная идея пользователя: ${body.description}\n\nВыбранная концепция:\n${JSON.stringify(
@@ -31,8 +31,8 @@ export default async (req: Request): Promise<Response> => {
     2
   )}`;
 
-  return streamJson(() =>
-    callClaude({
+  try {
+    const result = await callClaude({
       system: systemPrompt(SHOOTING_PLAN_INSTRUCTION),
       toolName: "shooting_plan",
       toolDescription: "Конкретный план съёмки по выбранной концепции",
@@ -40,6 +40,15 @@ export default async (req: Request): Promise<Response> => {
       text: conceptText,
       maxTokens: 4096,
       temperature: 0.4,
-    })
-  );
+    });
+    return { statusCode: 200, body: JSON.stringify(result) };
+  } catch (err) {
+    if (err instanceof ClaudeRequestError) {
+      return { statusCode: err.status, body: JSON.stringify({ error: err.message }) };
+    }
+    return {
+      statusCode: 502,
+      body: JSON.stringify({ error: "Не удалось получить ответ от модели. Попробуй ещё раз." }),
+    };
+  }
 };

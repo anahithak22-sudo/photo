@@ -107,7 +107,7 @@ export const ConceptSchema = z.object({
   location: z.string(),
   background: z.string(),
   lighting: z.string(),
-  props: z.array(PropSchema).min(1),
+  props: z.array(PropSchema).min(1).max(3),
   composition: z.string(),
   colorPalette: z
     .array(
@@ -117,14 +117,19 @@ export const ConceptSchema = z.object({
       })
     )
     .min(3)
-    .max(5),
+    .max(4),
   moodDescription: z.string(),
-  searchPrompts: z.array(z.string()).min(3).max(5),
-  referenceNotes: z.array(z.string()).min(3),
+  searchPrompts: z.array(z.string()).min(3).max(4),
+  referenceNotes: z.array(z.string()).min(3).max(5),
 });
 
+// Fixed at exactly 3 (rather than the original 3-4) to keep generation time
+// well under the ~30s inactivity-timeout wall of the proxy in front of
+// Netlify — measured live: a full non-streaming request consistently landed
+// at ~31s regardless of max_tokens, so the fix is generating less content,
+// not raising a ceiling that was never actually the limiting factor.
 export const ConceptsSchema = z.object({
-  concepts: z.array(ConceptSchema).min(3).max(4),
+  concepts: z.array(ConceptSchema).length(3),
 });
 
 export const ShootingPlanSchema = z.object({
