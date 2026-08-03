@@ -174,8 +174,10 @@ export const ShootingPlanSchema = z.object({
         description: z.string(),
       })
     )
+    // Capped at 6 (was 10): the full plan measured 33.8s against an effective
+    // ~35s ceiling and got cut, returning no payload.
     .min(5)
-    .max(10),
+    .max(6),
   editingDirection: z.string(),
 });
 
