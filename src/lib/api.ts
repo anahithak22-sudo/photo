@@ -41,16 +41,40 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-export function analyzeSinglePhoto(image: ApiImage): Promise<PhotoAnalysis> {
-  return post("/api/analyze", { images: [image], mode: "single" });
+// Both the photo analysis and the reconstruction are requested as two halves
+// in parallel and merged here. Generating either one in a single call ran right
+// at (or past) the ~35s ceiling imposed by the proxy in front of Netlify; each
+// half completes in roughly half that, leaving real margin.
+export async function analyzeSinglePhoto(image: ApiImage): Promise<PhotoAnalysis> {
+  const [a, b] = await Promise.all([
+    post<Pick<PhotoAnalysis, "composition" | "color" | "light">>("/api/analyze", {
+      images: [image],
+      mode: "a",
+    }),
+    post<Omit<PhotoAnalysis, "composition" | "color" | "light">>("/api/analyze", {
+      images: [image],
+      mode: "b",
+    }),
+  ]);
+  return { ...a, ...b };
 }
 
 export function analyzeSeriesStyle(images: ApiImage[]): Promise<SeriesStyle> {
   return post("/api/analyze", { images, mode: "series" });
 }
 
-export function reconstructPhotos(images: ApiImage[]): Promise<ReconstructResult> {
-  return post("/api/reconstruct", { images });
+type ReconstructTech = Pick<
+  ReconstructResult,
+  "camera" | "lens" | "settings" | "perspective" | "lighting" | "location"
+>;
+type ReconstructPlan = Omit<ReconstructResult, keyof ReconstructTech>;
+
+export async function reconstructPhotos(images: ApiImage[]): Promise<ReconstructResult> {
+  const [tech, plan] = await Promise.all([
+    post<ReconstructTech>("/api/reconstruct", { images, part: "tech" }),
+    post<ReconstructPlan>("/api/reconstruct", { images, part: "plan" }),
+  ]);
+  return { ...tech, ...plan };
 }
 
 export function generateConcepts(description: string): Promise<{ concepts: Concept[] }> {

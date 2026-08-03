@@ -12,10 +12,17 @@ export const SectionSchema = z.object({
   recommendation: z.string(),
 });
 
-export const PhotoAnalysisSchema = z.object({
+// Split into two halves the client requests in parallel and merges. A single
+// full analysis of a real photo measured 32.8s against an effective ~35s
+// platform ceiling — no usable margin, so real uploads (larger than the test
+// image) tipped over it. Each half lands around half that.
+export const PhotoAnalysisPartASchema = z.object({
   composition: SectionSchema,
   color: SectionSchema,
   light: SectionSchema,
+});
+
+export const PhotoAnalysisPartBSchema = z.object({
   quality: SectionSchema,
   retouching: SectionSchema,
   format: SectionSchema,
@@ -64,7 +71,11 @@ function confidenceSchema<T extends z.ZodTypeAny>(primary: T) {
   });
 }
 
-export const ReconstructSchema = z.object({
+// Split into two halves that the client requests in parallel and merges.
+// The combined response consistently took ~36s to generate and got cut by an
+// effective ~35s platform ceiling; each half lands well inside it. This
+// mirrors how analyze already fans out one request per photo.
+export const ReconstructTechSchema = z.object({
   camera: confidenceSchema(z.string()),
   lens: confidenceSchema(
     z.object({
@@ -82,6 +93,9 @@ export const ReconstructSchema = z.object({
   perspective: confidenceSchema(z.string()),
   lighting: confidenceSchema(z.string()),
   location: confidenceSchema(z.string()),
+});
+
+export const ReconstructPlanSchema = z.object({
   props: z
     .array(
       z.object({

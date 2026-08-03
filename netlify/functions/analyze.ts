@@ -1,11 +1,24 @@
 import { callClaude, type ImageInput } from "./_lib/claude";
-import { systemPrompt, ANALYZE_SINGLE_INSTRUCTION, ANALYZE_SERIES_INSTRUCTION } from "./_lib/prompts";
-import { PhotoAnalysisSchema, SeriesStyleSchema } from "./_lib/schemas";
+import {
+  systemPrompt,
+  ANALYZE_PART_A_INSTRUCTION,
+  ANALYZE_PART_B_INSTRUCTION,
+  ANALYZE_SERIES_INSTRUCTION,
+} from "./_lib/prompts";
+import {
+  PhotoAnalysisPartASchema,
+  PhotoAnalysisPartBSchema,
+  SeriesStyleSchema,
+} from "./_lib/schemas";
 import { streamJson, jsonResponse } from "./_lib/http";
 
 interface RequestBody {
   images: ImageInput[];
-  mode: "single" | "series";
+  // "a" and "b" are the two halves of a single photo's analysis, requested in
+  // parallel by the client and merged there. A combined request measured 32.8s
+  // against an effective ~35s platform ceiling, leaving no margin for larger
+  // real-world uploads.
+  mode: "a" | "b" | "series";
 }
 
 export default async (req: Request): Promise<Response> => {
@@ -24,23 +37,36 @@ export default async (req: Request): Promise<Response> => {
     return jsonResponse(400, { error: "Нужна хотя бы одна фотография" });
   }
 
-  return streamJson(() =>
-    body.mode === "series"
-      ? callClaude({
-          system: systemPrompt(ANALYZE_SERIES_INSTRUCTION),
-          toolName: "series_style",
-          toolDescription: "Общий визуальный стиль серии фотографий",
-          schema: SeriesStyleSchema,
-          images: body.images,
-          maxTokens: 2200,
-        })
-      : callClaude({
-          system: systemPrompt(ANALYZE_SINGLE_INSTRUCTION),
-          toolName: "photo_analysis",
-          toolDescription: "Разбор одной фотографии по категориям",
-          schema: PhotoAnalysisSchema,
-          images: [body.images[0]],
-          maxTokens: 2200,
-        })
-  );
+  return streamJson(() => {
+    if (body.mode === "series") {
+      return callClaude({
+        system: systemPrompt(ANALYZE_SERIES_INSTRUCTION),
+        toolName: "series_style",
+        toolDescription: "Общий визуальный стиль серии фотографий",
+        schema: SeriesStyleSchema,
+        images: body.images,
+        maxTokens: 1600,
+      });
+    }
+
+    if (body.mode === "b") {
+      return callClaude({
+        system: systemPrompt(ANALYZE_PART_B_INSTRUCTION),
+        toolName: "photo_analysis_b",
+        toolDescription: "Качество, ретушь, формат, стиль и итог по фотографии",
+        schema: PhotoAnalysisPartBSchema,
+        images: [body.images[0]],
+        maxTokens: 1800,
+      });
+    }
+
+    return callClaude({
+      system: systemPrompt(ANALYZE_PART_A_INSTRUCTION),
+      toolName: "photo_analysis_a",
+      toolDescription: "Композиция, цвет и свет фотографии",
+      schema: PhotoAnalysisPartASchema,
+      images: [body.images[0]],
+      maxTokens: 1400,
+    });
+  });
 };
